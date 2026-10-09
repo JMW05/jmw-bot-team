@@ -17,6 +17,31 @@ Copy-Item -Path (Join-Path $SourceAgents '*.md') -Destination $TargetAgents -For
 $JmwDir = Join-Path $TargetPath '.jmw'
 New-Item -ItemType Directory -Force -Path $JmwDir | Out-Null
 
+# Install the shared JMW support bundle into .jmw so synced agents can always
+# find their standards, checklists, workflows, and report template without
+# polluting or overwriting the target project's own root files.
+$SharedFolders = @('standards', 'checklists', 'workflows')
+foreach ($FolderName in $SharedFolders) {
+    $SourceFolder = Join-Path $RepoRoot $FolderName
+    $TargetFolder = Join-Path $JmwDir $FolderName
+    if (Test-Path $SourceFolder) {
+        New-Item -ItemType Directory -Force -Path $TargetFolder | Out-Null
+        Copy-Item -Path (Join-Path $SourceFolder '*') -Destination $TargetFolder -Recurse -Force
+    }
+}
+
+$MasterInstructions = Join-Path $RepoRoot 'CLAUDE.md'
+if (Test-Path $MasterInstructions) {
+    Copy-Item $MasterInstructions (Join-Path $JmwDir 'JMW-MASTER.md') -Force
+}
+
+$ReportTemplate = Join-Path $RepoRoot 'templates\reports\JMW-REVIEW.md'
+if (Test-Path $ReportTemplate) {
+    $TargetReportDir = Join-Path $JmwDir 'templates\reports'
+    New-Item -ItemType Directory -Force -Path $TargetReportDir | Out-Null
+    Copy-Item $ReportTemplate (Join-Path $TargetReportDir 'JMW-REVIEW.md') -Force
+}
+
 if ($ProjectSlug) {
     $Profile = Join-Path $RepoRoot ("projects\{0}.md" -f $ProjectSlug)
     $Addendum = Join-Path $RepoRoot ("project-claude\{0}.md" -f $ProjectSlug)
@@ -26,5 +51,6 @@ if ($ProjectSlug) {
 }
 
 Write-Host "JMW agents installed to $TargetAgents"
+Write-Host "JMW shared support bundle installed to $JmwDir"
 if ($ProjectSlug) { Write-Host "Project profile installed for: $ProjectSlug" }
 Write-Host 'No existing CLAUDE.md was overwritten.'
