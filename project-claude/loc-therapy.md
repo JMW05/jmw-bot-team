@@ -1,0 +1,2 @@
+# Project CLAUDE addendum — Loc Therapy
+Read JMW agents and `projects/loc-therapy.md`. This project profile is incomplete. Inspect the actual repository before making assumptions. Do not invent business purpose, services, domain, stack, booking/payment behavior, or production environment. Ask only for material facts that cannot be verified. Production requires explicit human approval.

@@ -1,0 +1,2 @@
+# Project CLAUDE addendum — TCRDF
+Read JMW finance agents and `projects/tcrdf.md`. QBO is authoritative. AI is review/draft support only unless explicitly authorized otherwise. Do not release payment, post journal entries, alter books, change vendor banking, or convert missing support into approval. Separate facts, exceptions, and human decisions.

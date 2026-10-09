@@ -1,0 +1,3 @@
+# Project CLAUDE addendum — THEE YARDLINE
+Read the installed JMW agents and `projects/theeyardline.md` profile before work.
+Preserve DISCOVER -> COMPARE -> LEARN -> CONTACT. Publish verified-only athletics/program data. Do not invent unavailable history, contacts, or program facts. Independently QA school profiles, filters, compare, Contact Coach, and mobile states. Production deployment requires explicit human approval.

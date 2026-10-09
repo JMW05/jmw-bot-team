@@ -1,0 +1,2 @@
+# Project CLAUDE addendum — TCABC Connect
+Read JMW agents and `projects/tcabc-connect.md`. Public-first; no member PII. QBO remains authoritative for accounting. Do not convert approvals/memos into proof of payment. Preserve accurate event status including cancellations. Use finance agents only for finance material. Production requires explicit human approval.

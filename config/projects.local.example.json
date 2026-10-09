@@ -1,0 +1,12 @@
+{
+  "projects": [
+    { "slug": "lavish", "path": "C:\\Projects\\lavish", "enabled": true },
+    { "slug": "theeyardline", "path": "C:\\Projects\\theeyardline", "enabled": false },
+    { "slug": "greeks-r-us", "path": "C:\\Projects\\greeks-r-us", "enabled": false },
+    { "slug": "loc-therapy", "path": "C:\\Projects\\loc-therapy", "enabled": false },
+    { "slug": "tales-from-the-crue", "path": "C:\\Projects\\tales-from-the-crue", "enabled": false },
+    { "slug": "tcrdf", "path": "C:\\Projects\\tcrdf", "enabled": false },
+    { "slug": "tcabc-connect", "path": "C:\\Projects\\tcabc-connect", "enabled": false },
+    { "slug": "byjmw", "path": "C:\\Projects\\byjmw", "enabled": false }
+  ]
+}

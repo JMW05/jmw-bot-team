@@ -1,0 +1,2 @@
+# Project CLAUDE addendum — Greeks R Us
+Read JMW agents and `projects/greeks-r-us.md`. Preserve the Diva Box reveal artwork and premium campaign art direction. Do not substitute generic typography or warp source art to make motion easier. Treat visual quality, reduced motion, mobile composition, performance, and runtime behavior as separate verification concerns. Do not deploy without explicit human approval.

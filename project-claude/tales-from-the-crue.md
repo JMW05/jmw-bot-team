@@ -1,0 +1,2 @@
+# Project CLAUDE addendum — Tales from the CRUE
+Read JMW game agents and `projects/tales-from-the-crue.md`. For Jazz combat, the Combat Bible defines move/beat scope and the CRUE Jazz Move References folder controls pose/motion presentation when available. Do not fake handedness or missing art truth in code. Distinguish automated/static checks from actual Godot play verification. No release/export without explicit human approval.

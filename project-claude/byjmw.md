@@ -1,0 +1,2 @@
+# Project CLAUDE addendum — byJMW
+Read JMW agents and `projects/byjmw.md`. Treat this site as a portfolio-quality demonstration of JMW capabilities. Avoid generic/template presentation. Prioritize premium visual hierarchy, purposeful animation, clear services/packages, proof of work, request flow, mobile quality, accessibility, and performance. Production requires explicit human approval.

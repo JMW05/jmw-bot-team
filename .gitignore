@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+secrets*
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store
+Thumbs.db
+config/projects.local.json
