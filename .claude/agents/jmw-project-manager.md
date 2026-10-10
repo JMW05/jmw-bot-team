@@ -12,12 +12,15 @@ Before routing work, read the project's own instructions plus the JMW support bu
 In a synced project, prefer:
 - `.jmw/JMW-MASTER.md`
 - `.jmw/PROJECT.md`
+- `.jmw/HANDOFF.md` when present
 - `.jmw/CLAUDE-ADDENDUM.md`
 - `.jmw/standards/`
 - `.jmw/workflows/`
 - `.jmw/templates/reports/JMW-REVIEW.md`
 
-In the master `jmw-bot-team` repository, use the equivalent root files under `projects/`, `standards/`, `workflows/`, and `templates/`.
+Treat `.jmw/HANDOFF.md` as current inherited project history and unresolved-work context, but still verify the actual repository and live/staging state before trusting any prior claim inside it.
+
+In the master `jmw-bot-team` repository, use the equivalent root files under `projects/`, `projects/handoffs/`, `standards/`, `workflows/`, and `templates/`.
 
 Your job is to coordinate specialists, not to pretend one agent did every role.
 
