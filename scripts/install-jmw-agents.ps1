@@ -48,9 +48,23 @@ if ($ProjectSlug) {
     if (-not (Test-Path $Profile)) { throw "Unknown project profile: $ProjectSlug" }
     Copy-Item $Profile (Join-Path $JmwDir 'PROJECT.md') -Force
     if (Test-Path $Addendum) { Copy-Item $Addendum (Join-Path $JmwDir 'CLAUDE-ADDENDUM.md') -Force }
+
+    # If one or more dated handoff snapshots exist for this project, install
+    # the newest one as .jmw/HANDOFF.md so agents inherit the latest verified
+    # project history and unresolved work instead of starting from scratch.
+    $HandoffDir = Join-Path $RepoRoot 'projects\handoffs'
+    if (Test-Path $HandoffDir) {
+        $LatestHandoff = Get-ChildItem -Path $HandoffDir -Filter ("{0}-*.md" -f $ProjectSlug) -File |
+            Sort-Object Name -Descending |
+            Select-Object -First 1
+        if ($LatestHandoff) {
+            Copy-Item $LatestHandoff.FullName (Join-Path $JmwDir 'HANDOFF.md') -Force
+        }
+    }
 }
 
 Write-Host "JMW agents installed to $TargetAgents"
 Write-Host "JMW shared support bundle installed to $JmwDir"
 if ($ProjectSlug) { Write-Host "Project profile installed for: $ProjectSlug" }
+if (Test-Path (Join-Path $JmwDir 'HANDOFF.md')) { Write-Host 'Latest project handoff installed as .jmw\HANDOFF.md' }
 Write-Host 'No existing CLAUDE.md was overwritten.'
