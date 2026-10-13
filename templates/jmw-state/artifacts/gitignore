@@ -1,0 +1,5 @@
+# Installed as .jmw/artifacts/.gitignore
+videos/*
+logs/*
+!videos/.gitkeep
+!logs/.gitkeep

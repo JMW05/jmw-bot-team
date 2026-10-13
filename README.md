@@ -15,7 +15,14 @@ The bots may inspect, analyze, draft, test, and recommend. They must not deploy 
 - `.claude/agents/` — reusable Claude Code subagents.
 - `standards/` — rules the agents must follow.
 - `checklists/` — repeatable QA and finance review procedures.
-- `templates/` — starting briefs and review formats.
+- `templates/` — starting briefs and review formats (`templates/jmw-state/` holds the project-state templates).
+- `.claude/skills/` — goal workflows: `/jmw-review`, `/jmw-fix-p1`, `/jmw-owner-ready`, `/jmw-launch-check`, `/jmw-finance-review`, `/jmw-game-build`.
+- `standards/ORCHESTRATION-STANDARDS.md` + `workflows/STATE-MACHINES.md` — action levels L0–L4, modes, stop rules, task/result envelopes, project states.
+- `scripts/validate-jmw-state.py` — checks a project's `.jmw/` state files. Tests: `python -m unittest discover -s tests -v`.
+
+## Orchestration (Phase 2)
+
+In an installed project, say a goal such as **"Get this project owner-review ready."** The main Claude session acts as the JMW Project Manager, works through every authorized safe step, keeps `.jmw/STATUS.md`, `OPEN-ISSUES.md`, `DECISIONS.md`, `HANDOFF.md`, and `RUN-LOG.md` current, saves evidence in `.jmw/artifacts/`, and stops only at a real human gate. Plain-English guide: `docs/ORCHESTRATION-GUIDE.md`.
 
 ## First commands to try
 

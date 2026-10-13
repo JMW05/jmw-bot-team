@@ -14,7 +14,12 @@ The installer:
 - copies current master agents;
 - creates `.jmw/PROJECT.md` from the chosen profile;
 - creates `.jmw/CLAUDE-ADDENDUM.md` from the matching project addendum;
+- installs the `jmw-*` skills into `.claude/skills/`;
+- copies dated handoff snapshots into `.jmw/handoffs/`;
+- creates `.jmw/STATUS.md`, `DECISIONS.md`, `OPEN-ISSUES.md`, `HANDOFF.md`, `RUN-LOG.md`, and `.jmw/artifacts/` **only if they don't exist yet** (re-running never overwrites project state);
 - does NOT overwrite the target's existing `CLAUDE.md`.
+
+Check the result with `python scripts\validate-jmw-state.py "C:\path\to\project"`.
 
 Then add the short include instruction from `.jmw/CLAUDE-ADDENDUM.md` to the target `CLAUDE.md`, or ask Claude Code to read that file explicitly.
 

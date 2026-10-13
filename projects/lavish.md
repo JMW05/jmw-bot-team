@@ -28,3 +28,19 @@ custom-shirt order, uploads, simple text designer, dark/light shirts, low contra
 
 ## Production guardrail
 Staging and production are distinct. Verify live behavior rather than accepting a claimed fix.
+## JMW Orchestration
+
+```yaml
+domain: website
+l2_allowed: none
+check_commands: npm run check
+extra_states:
+  - LIVE_EMAIL_QA after OWNER_REVIEW
+extra_gates:
+  - LIVE_EMAIL_QA
+skip_states: none
+```
+
+- `l2_allowed: none`: staging deploys need a human yes each time, matching the handoff rule "deployed to staging only when authorized". To allow them standing, record a `DECISIONS.md` authorization (`level: L2`) or change this line in the master profile.
+- `LIVE_EMAIL_QA`: real-inbox email QA (quote ready, status update, pickup, shipped, manual, resend) needs the owner to complete Cloudflare Access manually, so it's a human gate before launch review. Never weaken Access to automate it.
+- `npm run check` is the known full-suite command from the 2026-10-09 handoff. Verify it still exists in the repo before relying on it.

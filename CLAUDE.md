@@ -37,6 +37,8 @@ Before relevant work, consult:
 - `standards/QA-STANDARDS.md`
 - `standards/FINANCE-STANDARDS.md`
 - `standards/SECURITY-RULES.md`
+- `standards/ORCHESTRATION-STANDARDS.md` (action levels L0-L4, modes, stop conditions, task/result envelopes, artifacts)
+- `workflows/STATE-MACHINES.md` (project states and human gates)
 
 Also use the matching checklist in `checklists/`.
 
@@ -56,6 +58,12 @@ Never:
 - change an authoritative accounting ledger;
 - mark a finance/compliance item complete when support is missing;
 - treat AI review as human approval.
+
+## Orchestration
+
+Projects keep durable state in `.jmw/STATUS.md`, `DECISIONS.md`, `OPEN-ISSUES.md`, `HANDOFF.md`, and `RUN-LOG.md`, with evidence in `.jmw/artifacts/`.
+Goal requests such as "get this owner-review ready" run the matching `jmw-*` skill. The main session then acts as the JMW Project Manager (`.claude/agents/jmw-project-manager.md`) and continues through safe steps until it reaches a legitimate human gate.
+Action levels and modes only add limits. Nothing in them weakens the rules above or below.
 
 ## Evidence rules
 

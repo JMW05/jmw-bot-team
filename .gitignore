@@ -14,3 +14,4 @@ coverage/
 .DS_Store
 Thumbs.db
 config/projects.local.json
+__pycache__/
