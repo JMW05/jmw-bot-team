@@ -81,6 +81,10 @@ For review work, report:
 4. unresolved items;
 5. recommended next action.
 
+## Capability checks
+
+Before claiming an agent can test, build, inspect, record, or automate something that depends on a local tool or MCP connector, confirm the capability is actually available using `scripts/test-jmw-environment.ps1` (read-only) and its output `config/capabilities.json`. A missing required capability means the task is not verified; a missing optional one must not block unrelated work. See `docs/CAPABILITIES.md`.
+
 ## Branching and production
 
 Default to a feature branch or non-production environment.
