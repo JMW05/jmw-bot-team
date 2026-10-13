@@ -49,8 +49,8 @@ Follow `.jmw/orchestration/PM-LOOP.md` (master repo: `orchestration/PM-LOOP.md`)
 7. Determine the requested end goal
 8. Determine the current project state
 9. Determine the highest-priority eligible next action
-10. Check action permission (L0–L4, mode, project policy)
-11. Route the task to the correct specialist with a TASK ENVELOPE
+10. Check action permission (L0–L4, mode, project policy) AND required capabilities (see "Capability gate" below)
+11. Route the task to the correct specialist with a TASK ENVELOPE (including `required_capabilities`)
 12. Receive the RESULT ENVELOPE
 13. Require independent verification when appropriate
 14. Capture evidence/artifacts in `.jmw/artifacts/`
@@ -64,6 +64,24 @@ Follow `.jmw/orchestration/PM-LOOP.md` (master repo: `orchestration/PM-LOOP.md`)
 Do NOT ask the user for approval after every ordinary safe (L0/L1) step. Stop only for: a human business/policy decision, credentials/login, production approval, accounting posting, payment, a destructive operation, unresolved material ambiguity, or an action outside the authorized mode/scope.
 
 Natural-language requests map to the JMW commands in `orchestration/COMMANDS.md` (for example, "Get this owner-review ready" = `jmw-owner-ready`).
+
+## Capability gate
+
+This is part of step 10 of the loop, done before routing any task that depends on a local tool or an MCP connector. It never replaces the permission check; an action must pass both.
+
+1. Name the capability the task needs (`docs/CAPABILITIES.md` has the map; in a synced project read it at `<master_repo_path>/docs/CAPABILITIES.md`).
+2. Read the current state with the read-only reader, which applies the freshness rule for you:
+   - master repo: `pwsh -NoProfile -File scripts/get-jmw-capability.ps1 -Capability <name>`
+   - synced project: read `.jmw/local/jmw-master.json` and run its `reader_path` with `-ProjectPath . -Capability <name>`.
+   Exit 0 = ready, 1 = not ready, 2 = missing/stale/other OS/unknown.
+3. On exit 2, add `-Refresh` once (it reruns the read-only checker). If the reader, pointer, checker, or `pwsh` is not reachable (for example a cloud session or another machine), check only the specific tool directly (for example `godot --version`, or whether the MCP tools are present in this session) and record the result as "ad hoc, not from the checker". `-Refresh` writes only the master repo's gitignored workstation file; if the user said "do not modify anything", skip it and run the checker with `-NoWrite` instead. Never copy capability state into a project.
+4. If a required capability is not ready, do not route the task as if it can be tested or verified. Record exactly which capability is missing and its state (unavailable, authentication required, unknown) in the issue and STATUS, and look for another eligible action (step 9).
+5. Stop the run only when that capability is required for every remaining eligible action. A missing optional tool never blocks unrelated work.
+6. Put the capability in the TASK ENVELOPE `required_capabilities` so the specialist stops with `blocked` if it turns out to be unavailable.
+
+Examples: game QA requires Godot (headless verified); gameplay capture requires Godot and FFmpeg; browser QA requires Playwright MCP; deep browser debugging requires Chrome DevTools MCP; image cleanup may require ImageMagick; GitHub CLI operations require `gh` (signed in); finance review does not require Godot; website review does not fail because Audacity is missing.
+
+Capability state is a precondition, not evidence. A "connected" MCP or an installed tool does not mean the task was tested, and a ready capability never counts as verification. Never authenticate a connector, install a tool, or change MCP configuration to make a capability pass; report it to the human instead.
 
 ## What you may write
 
@@ -90,19 +108,3 @@ For multi-agent work, keep `.jmw/STATUS.md` current (it replaces an ad hoc ledge
 - Human decision required
 
 Use `.jmw/templates/reports/JMW-REVIEW.md` in synced projects and `templates/reports/JMW-REVIEW.md` in the master repo for final review reporting.
-
-## Capability check before routing
-
-Before routing work that depends on an external capability (a local tool or an MCP connector):
-
-1. Determine the required capability for the task (see `docs/CAPABILITIES.md` for the map).
-2. Consult the latest capability state: `config/capabilities.json` in the master repo, or `.jmw/capabilities.json` in a synced project when present.
-3. If the state is missing, has `generated_at: null`, is older than 7 days, or shows the needed capability as not ready, run the read-only checker: `pwsh -NoProfile -File scripts/test-jmw-environment.ps1` from the `jmw-bot-team` repo. If the checker is not reachable from the current project, check only the specific tool directly (for example `godot --version`) and say the check was ad hoc.
-4. If a required capability is unavailable, do not claim the task was tested or verified.
-5. Report exactly which capability is missing and its state (unavailable, authentication required, unknown).
-6. Stop only if that capability is required for the current task.
-7. Missing optional tools must not block unrelated work.
-
-Examples: game QA requires Godot (headless verified); gameplay capture requires Godot and FFmpeg; browser QA requires Playwright MCP; deep browser debugging requires Chrome DevTools MCP; image cleanup may require ImageMagick; GitHub CLI operations require `gh` (signed in); finance review does not require Godot; website review does not fail because Audacity is missing.
-
-Capability state is a precondition, not evidence. A "connected" MCP or an installed tool does not mean the task was tested. Never authenticate a connector, install a tool, or change MCP configuration to make a capability pass; report it to the human instead.

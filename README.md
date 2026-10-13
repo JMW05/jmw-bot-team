@@ -18,7 +18,8 @@ The bots may inspect, analyze, draft, test, and recommend. They must not deploy 
 - `templates/` — starting briefs and review formats, plus `templates/jmw-state/` (the per-project state files).
 - `orchestration/` — how the JMW Project Manager runs multi-step work safely: permission levels, modes, state machines, task/result envelopes, the PM loop, and commands. Start with `orchestration/README.md`.
 - `.claude/skills/jmw-*` — the six JMW commands (`/jmw-review`, `/jmw-fix-p1`, `/jmw-owner-ready`, `/jmw-launch-check`, `/jmw-finance-review`, `/jmw-game-build`). Plain-English requests trigger them too.
-- `scripts/` — installer, sync, and a read-only state checker. `tests/test-installer.ps1` tests them.
+- `scripts/` — installer, sync, a read-only state checker, and the read-only environment/capability checker (`test-jmw-environment.ps1`) with its reader (`get-jmw-capability.ps1`). See `docs/CAPABILITIES.md`.
+- `tests/` — `test-installer.ps1` (installer and state checker) and `test-foundation.ps1` (capability reader, agent/skill files, Project Manager instructions).
 
 ## First commands to try
 

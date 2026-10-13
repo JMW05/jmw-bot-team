@@ -13,6 +13,7 @@ mode: FIX
 allowed_actions: [L0]             # levels and/or specific actions, e.g. "run npm run check"
 prohibited_actions: [edit source, deploy, send email, change Access settings]
 scope: quote form, upload step, 390px and 1440px
+required_capabilities: [browser_qa]   # from docs/CAPABILITIES.md; [] when none. Checked by the PM first.
 relevant_issue_ids: [ISSUE-012]
 required_evidence: [screenshot before/after at 390px, test command output]
 stop_conditions: [needs login, needs owner decision, action above allowed level]
@@ -40,6 +41,7 @@ state_transition_recommended: none   # e.g. "QA -> STAGING_READY" or none
 ## Rules
 
 - A specialist may only do what `allowed_actions` permits and must stop on any `stop_conditions` item, returning `status: stopped-human-gate` or `blocked` with `human_reason` filled in.
+- If a capability in `required_capabilities` turns out to be unavailable, the specialist stops with `status: blocked`, names the capability and its state, and does not substitute a weaker check and call it verified.
 - `tests` lists only checks that were actually run, with what was observed. "Should pass" is not a result.
 - A builder may report `issues_resolved` as **fixed-unverified** only. Resolution to `verified` requires a RESULT ENVELOPE from a different agent (or a person).
 - Distinguish observed, tested, inferred, not checked, and blocked, as `CLAUDE.md` requires.

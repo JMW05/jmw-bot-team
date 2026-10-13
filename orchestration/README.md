@@ -41,7 +41,7 @@ You: "Get this project owner-review ready."
 
 | Owned by the master repo (refreshed on every sync) | Owned by each project (created once, never overwritten) |
 |---|---|
-| `.claude/agents/`, `.claude/skills/jmw-*`, `.jmw/standards/`, `.jmw/checklists/`, `.jmw/workflows/`, `.jmw/orchestration/`, `.jmw/PROJECT.md`, `.jmw/JMW-MASTER.md`, `.jmw/JMW-INCLUDE.md`, `.jmw/handoff-snapshots/` | `.jmw/STATUS.md`, `.jmw/DECISIONS.md`, `.jmw/OPEN-ISSUES.md`, `.jmw/HANDOFF.md`, `.jmw/RUN-LOG.md`, `.jmw/artifacts/`, the project's root `CLAUDE.md` |
+| `.claude/agents/`, `.claude/skills/jmw-*`, `.jmw/standards/`, `.jmw/checklists/`, `.jmw/workflows/`, `.jmw/orchestration/`, `.jmw/PROJECT.md`, `.jmw/JMW-MASTER.md`, `.jmw/JMW-INCLUDE.md`, `.jmw/handoff-snapshots/`, `.jmw/local/` (workstation-local pointer to capability state, never committed) | `.jmw/STATUS.md`, `.jmw/DECISIONS.md`, `.jmw/OPEN-ISSUES.md`, `.jmw/HANDOFF.md`, `.jmw/RUN-LOG.md`, `.jmw/artifacts/`, the project's root `CLAUDE.md` |
 
 ## Files here
 

@@ -17,6 +17,7 @@ The installer:
 - copies the JMW command skills (`.claude/skills/jmw-*` only; other skills are left alone);
 - copies `orchestration/` to `.jmw/orchestration/` and `JMW-INCLUDE.md` to `.jmw/JMW-INCLUDE.md`;
 - creates the project state files `.jmw/STATUS.md`, `DECISIONS.md`, `OPEN-ISSUES.md`, `HANDOFF.md`, `RUN-LOG.md` and the `.jmw/artifacts/` folders **only if they are missing**. Existing project state is never overwritten;
+- writes `.jmw/local/jmw-master.json`, a workstation-local pointer to this master repo's capability state, checker and reader (`.jmw/local/` ignores itself in git; no capability state is copied into the project);
 - seeds a missing `.jmw/HANDOFF.md` from the newest `projects/handoffs/<slug>-*.md` snapshot, and always copies the snapshots to `.jmw/handoff-snapshots/` for reference;
 - does NOT overwrite the target's existing `CLAUDE.md`.
 

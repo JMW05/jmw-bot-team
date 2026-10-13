@@ -1,6 +1,6 @@
 # JMW Capabilities
 
-Before any JMW agent claims it can test, build, inspect, record, or automate something, the required local tools and MCP connectors must actually be available. `scripts/test-jmw-environment.ps1` checks that and records the result in `config/capabilities.json`.
+Before any JMW agent claims it can test, build, inspect, record, or automate something, the required local tools and MCP connectors must actually be available. `scripts/test-jmw-environment.ps1` checks that and records the result in `config/capabilities.json`. `scripts/get-jmw-capability.ps1` reads that file and says whether it can still be trusted.
 
 ## Run it
 
@@ -74,9 +74,42 @@ The checker also computes `capabilities` in the JSON, which is what the Project 
 
 Website review doesn't depend on Audacity, Krita, or Godot; finance review doesn't depend on Godot. Missing optional tools never block unrelated work.
 
+## Where capability state lives, and how it stays fresh
+
+There is exactly one copy of capability state per workstation:
+
+| Where | What it is |
+|---|---|
+| `config/capabilities.json` (master repo) | This workstation's state, written by the checker. **Gitignored, never committed**, so a clone on another machine or in a cloud session never inherits someone else's results. |
+| `config/capabilities.example.json` (master repo) | Committed schema example with `generated_at: null`. Never read as real state. |
+| `.jmw/local/jmw-master.json` (installed project) | Written by the installer on every sync. A pointer to the master repo's state file, checker and reader. `.jmw/local/` ignores itself in git. **No capability state is copied into projects.** |
+
+**Freshness rule** (implemented once, in `scripts/get-jmw-capability.ps1`): the state is usable only if the file exists, `schema_version` is 1, `generated_at` is set and no more than **24 hours** old, and `host.os` matches the machine reading it. Otherwise it is `MISSING` or `STALE` and nothing may be routed on it.
+
+24 hours is deliberately short: MCP connections and sign-ins can lapse between days, and a rerun takes about a minute.
+
+**Reading it:**
+
+```powershell
+# in the master repo
+pwsh -NoProfile -File scripts/get-jmw-capability.ps1 -Capability browser_qa
+# in an installed project (path comes from .jmw/local/jmw-master.json -> reader_path)
+pwsh -NoProfile -File <reader_path> -ProjectPath . -Capability browser_qa
+```
+
+| Exit | Output starts with | Meaning |
+|---|---|---|
+| 0 | `READY` / `FRESH` | Fresh state; the capability is ready (or no capability was asked for). |
+| 1 | `NOT READY` | Fresh state; the capability is missing something (named in the output). |
+| 2 | `MISSING` / `STALE` / `UNKNOWN` | No usable state, or no such capability. Don't route on it. |
+
+**Refreshing it:** add `-Refresh`. On `MISSING` or `STALE` it reruns the read-only checker, which rewrites the master repo's `config/capabilities.json`, then reads again. Running `scripts/test-jmw-environment.ps1` directly does the same. Re-syncing a project only refreshes the pointer, never the state.
+
+**When the state can't be reached** (no pointer because the project was installed before this change, the master repo isn't on this machine, a cloud session, no `pwsh`): check only the tool the task needs, directly (for example `godot --version`, or whether the MCP tools exist in the current session), and label the result "ad hoc, not from the checker".
+
 ## How the Project Manager uses it
 
-See "Capability check before routing" in `.claude/agents/jmw-project-manager.md`. In short: work out which capability the task needs, read `config/capabilities.json`, rerun the checker if the state is missing, stale (older than 7 days), or not ready, and if a required capability is missing, say exactly what is missing and don't claim the task was verified. A ready capability is a precondition, not proof that the task itself was tested.
+See "Capability gate" in `.claude/agents/jmw-project-manager.md`; it is part of step 10 of the PM loop (`orchestration/PM-LOOP.md`), next to the permission check. In short: work out which capability the task needs, read it with the reader (refreshing once if stale), and if a required capability is not ready, say exactly what is missing, don't claim the task was verified, and move on to other eligible work. The capability goes in the TASK ENVELOPE as `required_capabilities`. A ready capability is a precondition, not proof that the task itself was tested.
 
 ## Safety
 
@@ -89,4 +122,4 @@ The checker is read only. It never:
 
 `gh auth status` output is discarded; only its exit code is used. The Godot headless probe runs inside an empty temporary folder (deleted afterwards) so it can't open or import a real project. Godot may still update its own editor settings in its user-data folder, as any launch does.
 
-`config/capabilities.json` describes one workstation at one moment. It's committed so agents can read it, so rerun the checker on the machine doing the work rather than trusting a copy from another machine.
+`config/capabilities.json` describes one workstation at one moment and is never committed. The repo is public, and a committed copy would be stale truth for every other machine.

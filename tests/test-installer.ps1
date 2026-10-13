@@ -51,6 +51,18 @@ try {
     & pwsh -NoProfile -File $Checker -ProjectPath $P | Out-Null
     Assert ($LASTEXITCODE -eq 0) 'state checker passes on fresh templates'
 
+    # Capability pointer: local only, points at the master repo, no state copied
+    $PointerPath = Join-Path $J 'local/jmw-master.json'
+    Assert (Test-Path $PointerPath) '.jmw/local/jmw-master.json written'
+    $Ptr = Get-Content $PointerPath -Raw | ConvertFrom-Json
+    $MasterFull = (Resolve-Path $RepoRoot).Path
+    Assert ($Ptr.master_repo_path -eq $MasterFull) 'pointer names this master repo'
+    Assert ($Ptr.capabilities_path -match 'capabilities\.json$' -and $Ptr.capabilities_path.StartsWith($MasterFull)) 'pointer targets master config/capabilities.json'
+    Assert (Test-Path $Ptr.reader_path) 'pointer reader_path exists'
+    Assert (Test-Path $Ptr.checker_path) 'pointer checker_path exists'
+    Assert ((Get-Content (Join-Path $J 'local/.gitignore') -Raw) -match '(?m)^\*$') '.jmw/local/ ignores itself in git'
+    Assert (@(Get-ChildItem $P -Recurse -Force -Filter 'capabilities*.json').Count -eq 0) 'no capability state copied into the project'
+
     # 2. Re-install must not overwrite project state
     Add-Content (Join-Path $J 'STATUS.md') "`nPROJECT EDIT"
     Set-Content (Join-Path $J 'HANDOFF.md') '# Project handoff written by the project'

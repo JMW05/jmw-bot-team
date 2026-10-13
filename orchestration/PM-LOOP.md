@@ -20,7 +20,7 @@ This is how `jmw-project-manager` runs a request such as "Get this project owner
    - P0 before P1 before P2 before P3; older before newer;
    - skip issues that are `blocked`, `needs-human`, need credentials, or are outside scope;
    - if no issue is eligible, take the next step the state machine needs to reach the target (for example "run QA").
-10. **Check permission** (`PERMISSIONS.md`, `MODES.md`, project policy). If the action's level is above what the mode and policy allow, it is a stop condition for that action. Look for another eligible action before stopping the run.
+10. **Check permission and capability.** Permission: `PERMISSIONS.md`, `MODES.md`, project policy. If the action's level is above what the mode and policy allow, it is a stop condition for that action. Capability: if the action needs a local tool or MCP connector, run the capability gate in `jmw-project-manager` (fresh state from `scripts/get-jmw-capability.ps1`, see `docs/CAPABILITIES.md` in the master repo). A required capability that is not ready means the action cannot be tested or verified; record what is missing. Either way, look for another eligible action before stopping the run.
 11. **Route** to the right specialist with a TASK ENVELOPE (`TASK-CONTRACT.md`). Builders build; reviewers review. Do not do a specialist's job yourself.
 12. **Receive** the RESULT ENVELOPE. Treat it as a claim, not proof.
 13. **Require independent verification** when a builder changed something: send a new TASK ENVELOPE to a different agent (qa-tester, game-qa, design-director, launch-guard) before any issue becomes `verified`.
@@ -43,9 +43,9 @@ This is how `jmw-project-manager` runs a request such as "Get this project owner
 - An unresolved, material ambiguity where any guess could cause real harm or wasted work.
 - The next action is outside the authorized mode or scope.
 - The target state has been reached.
-- Nothing eligible is left (every remaining item is blocked or needs a human).
+- Nothing eligible is left (every remaining item is blocked, needs a human, or needs a capability that is not available on this workstation).
 
-Not stop conditions: a test failing (fix it in FIX mode, or log it), a minor ambiguity with a safe default (pick it, record it in STATUS), finishing one issue while others remain, wanting reassurance.
+Not stop conditions: a missing optional tool that the next action does not need, a test failing (fix it in FIX mode, or log it), a minor ambiguity with a safe default (pick it, record it in STATUS), finishing one issue while others remain, wanting reassurance.
 
 ## Loop guards
 

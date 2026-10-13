@@ -67,6 +67,22 @@ if (Test-Path $ReportTemplate) {
     Copy-Item $ReportTemplate (Join-Path $TargetReportDir 'JMW-REVIEW.md') -Force
 }
 
+# Workstation-local pointer back to this master repo, so the Project Manager can read
+# the CURRENT capability state (config/capabilities.json here) instead of a copy that
+# would go stale. .jmw/local/ ignores itself in git, so the path is never committed.
+# Refreshed on every sync. No capability state is ever copied into the project.
+$LocalDir = Join-Path $JmwDir 'local'
+New-Item -ItemType Directory -Force -Path $LocalDir | Out-Null
+Set-Content -Path (Join-Path $LocalDir '.gitignore') -Value "# Workstation-local JMW files. Never commit.`n*" -NoNewline
+$MasterRootFull = (Resolve-Path $RepoRoot).Path
+[ordered]@{
+    note              = 'Written by install-jmw-agents.ps1 on every sync. Local to this workstation; never commit.'
+    master_repo_path  = $MasterRootFull
+    capabilities_path = (Join-Path $MasterRootFull 'config\capabilities.json')
+    checker_path      = (Join-Path $MasterRootFull 'scripts\test-jmw-environment.ps1')
+    reader_path       = (Join-Path $MasterRootFull 'scripts\get-jmw-capability.ps1')
+} | ConvertTo-Json | Set-Content -Path (Join-Path $LocalDir 'jmw-master.json') -Encoding utf8
+
 $LatestHandoff = $null
 if ($ProjectSlug) {
     $Addendum = Join-Path $RepoRoot ("project-claude\{0}.md" -f $ProjectSlug)
@@ -140,4 +156,5 @@ if ($ProjectSlug) { Write-Host "Project profile installed for: $ProjectSlug" }
 if ($LatestHandoff) { Write-Host "Handoff snapshots from master copied to .jmw\handoff-snapshots\ (newest: $($LatestHandoff.Name))" }
 if ($Created.Count -gt 0) { Write-Host ("Created (were missing): " + ($Created -join ', ')) }
 if ($Kept.Count -gt 0) { Write-Host ("Kept existing project state, not overwritten: " + ($Kept -join ', ')) }
+Write-Host 'Capability pointer written to .jmw\local\jmw-master.json (local only; no capability state copied).'
 Write-Host 'No existing CLAUDE.md was overwritten.'
