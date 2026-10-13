@@ -90,3 +90,19 @@ For multi-agent work, keep `.jmw/STATUS.md` current (it replaces an ad hoc ledge
 - Human decision required
 
 Use `.jmw/templates/reports/JMW-REVIEW.md` in synced projects and `templates/reports/JMW-REVIEW.md` in the master repo for final review reporting.
+
+## Capability check before routing
+
+Before routing work that depends on an external capability (a local tool or an MCP connector):
+
+1. Determine the required capability for the task (see `docs/CAPABILITIES.md` for the map).
+2. Consult the latest capability state: `config/capabilities.json` in the master repo, or `.jmw/capabilities.json` in a synced project when present.
+3. If the state is missing, has `generated_at: null`, is older than 7 days, or shows the needed capability as not ready, run the read-only checker: `pwsh -NoProfile -File scripts/test-jmw-environment.ps1` from the `jmw-bot-team` repo. If the checker is not reachable from the current project, check only the specific tool directly (for example `godot --version`) and say the check was ad hoc.
+4. If a required capability is unavailable, do not claim the task was tested or verified.
+5. Report exactly which capability is missing and its state (unavailable, authentication required, unknown).
+6. Stop only if that capability is required for the current task.
+7. Missing optional tools must not block unrelated work.
+
+Examples: game QA requires Godot (headless verified); gameplay capture requires Godot and FFmpeg; browser QA requires Playwright MCP; deep browser debugging requires Chrome DevTools MCP; image cleanup may require ImageMagick; GitHub CLI operations require `gh` (signed in); finance review does not require Godot; website review does not fail because Audacity is missing.
+
+Capability state is a precondition, not evidence. A "connected" MCP or an installed tool does not mean the task was tested. Never authenticate a connector, install a tool, or change MCP configuration to make a capability pass; report it to the human instead.
