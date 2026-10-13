@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "generated_at": null,
+  "generated_by": "scripts/test-jmw-environment.ps1",
+  "note": "Schema example only, never real state. The checker writes this workstation's real state to config/capabilities.json, which is gitignored. Run: pwsh -NoProfile -File scripts/test-jmw-environment.ps1",
+  "host": null,
+  "local": {},
+  "mcp": {},
+  "mcp_listing": {
+    "ran": false,
+    "note": "not checked",
+    "server_count": 0,
+    "servers": []
+  },
+  "capabilities": {},
+  "summary": null
+}

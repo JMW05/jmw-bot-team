@@ -39,6 +39,7 @@ Ask Claude:
 
 Expected agents:
 
+- jmw-project-manager
 - site-architect
 - site-builder
 - design-director
@@ -48,6 +49,8 @@ Expected agents:
 - ap-reviewer
 - month-end-reviewer
 - board-report-writer
+- game-builder
+- game-qa
 
 ## 5. First safe website test
 

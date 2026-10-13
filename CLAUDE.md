@@ -29,6 +29,10 @@ Finance workflow:
 4. board-report-writer when applicable
 5. HUMAN approval/posting/payment
 
+## Orchestration
+
+Multi-step work is run by `jmw-project-manager` using `orchestration/` (permission levels L0–L4, modes, state machines, task/result envelopes, the PM loop, commands, artifacts). In installed projects these live in `.jmw/orchestration/`, and project state lives in `.jmw/STATUS.md`, `DECISIONS.md`, `OPEN-ISSUES.md`, `HANDOFF.md`, and `RUN-LOG.md`. The orchestration rules never relax the safety rules below; where they differ, the stricter rule wins.
+
 ## Required standards
 
 Before relevant work, consult:
@@ -80,6 +84,10 @@ For review work, report:
 3. findings by severity;
 4. unresolved items;
 5. recommended next action.
+
+## Capability checks
+
+Before claiming an agent can test, build, inspect, record, or automate something that depends on a local tool or MCP connector, confirm the capability is actually available on the machine doing the work. `scripts/test-jmw-environment.ps1` (read-only) writes this workstation's state to `config/capabilities.json`, which is local and never committed. `scripts/get-jmw-capability.ps1` reads it and rejects state that is missing, older than 24 hours, or from another OS. Installed projects reach it through `.jmw/local/jmw-master.json` and never keep their own copy. A missing required capability means the task is not verified; a missing optional one must not block unrelated work. A ready capability is a precondition, never evidence. See `docs/CAPABILITIES.md`.
 
 ## Branching and production
 
