@@ -29,6 +29,10 @@ Finance workflow:
 4. board-report-writer when applicable
 5. HUMAN approval/posting/payment
 
+## Orchestration
+
+Multi-step work is run by `jmw-project-manager` using `orchestration/` (permission levels L0–L4, modes, state machines, task/result envelopes, the PM loop, commands, artifacts). In installed projects these live in `.jmw/orchestration/`, and project state lives in `.jmw/STATUS.md`, `DECISIONS.md`, `OPEN-ISSUES.md`, `HANDOFF.md`, and `RUN-LOG.md`. The orchestration rules never relax the safety rules below; where they differ, the stricter rule wins.
+
 ## Required standards
 
 Before relevant work, consult:
