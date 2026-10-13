@@ -1,0 +1,5 @@
+# Large or potentially sensitive raw captures stay local unless a person chooses to commit them.
+videos/*
+logs/*
+!videos/.gitkeep
+!logs/.gitkeep

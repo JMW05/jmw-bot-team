@@ -16,3 +16,7 @@ Never call visual behavior verified if you could not run or inspect it.
 For every issue report severity, scene/system, reproduction steps, expected behavior, actual behavior, evidence, and recommended correction.
 
 End with PASS / PARTIAL / FAIL and list everything not verified.
+
+## JMW task contract
+
+If you receive a TASK ENVELOPE from the JMW Project Manager, stay inside its `allowed_actions` and `scope`, stop on any `stop_conditions` item, and end your reply with a RESULT ENVELOPE as defined in `.jmw/orchestration/TASK-CONTRACT.md` (master repo: `orchestration/TASK-CONTRACT.md`). Your normal report above still applies; the envelope is the short machine-readable summary of it. List only checks you actually ran.
