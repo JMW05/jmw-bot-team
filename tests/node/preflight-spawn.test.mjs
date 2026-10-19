@@ -125,3 +125,16 @@ test('spawn: output progress earns more time up to the hard cap; a clean exit is
 });
 
 function readdirLog(out) { return /log (\.jmw\/artifacts\/logs\/\S+\.log)/.exec(out)[1]; }
+
+test('templates and installer stay in step with the scripts', async () => {
+  const { REPO } = await import('./helpers.mjs');
+  const { DEFAULT_TIMEOUTS_MIN, DEFAULT_STALL_MIN } = await import('../../scripts/jmw-run.mjs');
+  const policy = JSON.parse(readFileSync(join(REPO, 'templates', 'jmw-state', 'run-policy.json'), 'utf8'));
+  assert.deepEqual(policy.preflight, { ...DEFAULT_THRESHOLDS });
+  assert.deepEqual(policy.timeouts_min, { ...DEFAULT_TIMEOUTS_MIN });
+  assert.equal(policy.stall_min, DEFAULT_STALL_MIN);
+  const installer = readFileSync(join(REPO, 'scripts', 'install-jmw-agents.ps1'), 'utf8');
+  for (const f of ['jmw-lib.mjs', 'jmw-run.mjs', 'jmw-preflight.mjs', 'jmw-report.mjs', 'run-policy.json']) assert.ok(installer.includes(`'${f}'`), `installer copies ${f}`);
+  const ignore = readFileSync(join(REPO, 'templates', 'jmw-state', '.gitignore'), 'utf8');
+  for (const line of ['local/', '.env', '*.key', 'runs/.lock']) assert.ok(ignore.split(/\r?\n/).includes(line), `.jmw/.gitignore has ${line}`);
+});

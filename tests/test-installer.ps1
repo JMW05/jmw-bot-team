@@ -43,6 +43,14 @@ try {
         Assert (Test-Path (Join-Path $P ".claude/skills/$k/SKILL.md")) "skill $k installed"
     }
     Assert ((Get-Content (Join-Path $P '.claude/skills/their-own-skill/SKILL.md') -Raw).Trim() -eq 'their skill') "project's own skill untouched"
+    foreach ($m in 'jmw-lib.mjs','jmw-run.mjs','jmw-preflight.mjs','jmw-report.mjs') {
+        Assert ((Hash (Join-Path $J "scripts/$m")) -eq (Hash (Join-Path $RepoRoot "scripts/$m"))) ".jmw/scripts/$m installed"
+    }
+    Assert (Test-Path (Join-Path $J 'run-policy.json')) '.jmw/run-policy.json created'
+    Assert ((Get-Content (Join-Path $J 'run-policy.json') -Raw | ConvertFrom-Json).preflight.min_free_ram_mb -gt 0) 'run-policy.json has preflight thresholds'
+    foreach ($d in 'runs','gates') { Assert (Test-Path (Join-Path $J $d)) ".jmw/$d created" }
+    $JIgnore = Get-Content (Join-Path $J '.gitignore') -Raw
+    foreach ($pat in 'local/','.env','*.key','runs/.lock') { Assert ($JIgnore -match [regex]::Escape($pat)) ".jmw/.gitignore covers $pat" }
     Assert ((Get-ChildItem (Join-Path $P '.claude/agents') -Filter '*.md').Count -ge 12) 'agents installed'
     $Snapshot = Get-ChildItem (Join-Path $RepoRoot 'projects/handoffs') -Filter 'lavish-*.md' | Sort-Object Name -Descending | Select-Object -First 1
     Assert ((Hash (Join-Path $J 'HANDOFF.md')) -eq (Hash $Snapshot.FullName)) 'missing HANDOFF.md seeded from newest Lavish snapshot'
@@ -90,12 +98,24 @@ try {
 "@)
     Set-Content (Join-Path $J 'OPEN-ISSUES.md') $Issues -NoNewline
     Set-Content (Join-Path $J 'artifacts/screenshots/keep.png') 'fake image'
+    Set-Content (Join-Path $J 'runs/R-2026-10-20-lavish-01.json') '{"run":{"run_key":"R-2026-10-20-lavish-01"}}'
+    Set-Content (Join-Path $J 'gates/G-2026-10-20-lavish-01.json') '{"gate_key":"G-2026-10-20-lavish-01"}'
+    Set-Content (Join-Path $J 'run-policy.json') '{"schema":"jmw-run-policy/1","preflight":{"min_free_ram_mb":3000}}'
+    Set-Content (Join-Path $J '.gitignore') "# project's own ignore`nproject-cache/"
+    Remove-Item (Join-Path $J 'scripts/jmw-run.mjs')
     $Before = @{}
-    foreach ($f in 'STATUS.md','HANDOFF.md','DECISIONS.md','RUN-LOG.md','OPEN-ISSUES.md','artifacts/README.md','artifacts/screenshots/keep.png') { $Before[$f] = Hash (Join-Path $J $f) }
+    foreach ($f in 'STATUS.md','HANDOFF.md','DECISIONS.md','RUN-LOG.md','OPEN-ISSUES.md','artifacts/README.md','artifacts/screenshots/keep.png','runs/R-2026-10-20-lavish-01.json','gates/G-2026-10-20-lavish-01.json','run-policy.json') { $Before[$f] = Hash (Join-Path $J $f) }
     $Out = & $Installer -TargetPath $P -ProjectSlug 'lavish' 6>&1 | Out-String
     foreach ($f in $Before.Keys) { Assert ((Hash (Join-Path $J $f)) -eq $Before[$f]) "re-install kept existing .jmw/$f" }
     Assert ((Hash (Join-Path $P 'CLAUDE.md')) -eq $ClaudeHash) 'root CLAUDE.md untouched on re-install'
     Assert ($Out -match 'Kept existing project state') 'installer reports kept state'
+    Assert (Test-Path (Join-Path $J 'scripts/jmw-run.mjs')) 're-install refreshes framework scripts'
+    $JIgnore = Get-Content (Join-Path $J '.gitignore') -Raw
+    Assert ($JIgnore -match 'project-cache/') "project's own .jmw/.gitignore lines kept"
+    Assert ($JIgnore -match '(?m)^local/$' -and $JIgnore -match '(?m)^\.env$') 'missing required ignore lines appended'
+    & $Installer -TargetPath $P -ProjectSlug 'lavish' | Out-Null
+    $Once = (Get-Content (Join-Path $J '.gitignore') | Where-Object { $_ -eq 'local/' }).Count
+    Assert ($Once -eq 1) 'ignore lines are not appended twice'
     $CheckOut = & pwsh -NoProfile -File $Checker -ProjectPath $P | Out-String
     Assert ($LASTEXITCODE -eq 0) 'state checker passes with a real issue'
     Assert ($CheckOut -match 'Issues found: 1') 'checker reads the issue (template ignored)'

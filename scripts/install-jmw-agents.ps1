@@ -67,6 +67,15 @@ if (Test-Path $ReportTemplate) {
     Copy-Item $ReportTemplate (Join-Path $TargetReportDir 'JMW-REVIEW.md') -Force
 }
 
+# Bot Ops scripts (run ledger, resource preflight, report builder). Framework files owned by
+# the master repo, refreshed on every sync into .jmw/scripts/. They need Node 22; nothing else.
+$SourceScripts = Join-Path $RepoRoot 'scripts'
+$TargetScripts = Join-Path $JmwDir 'scripts'
+New-Item -ItemType Directory -Force -Path $TargetScripts | Out-Null
+foreach ($ScriptName in @('jmw-lib.mjs', 'jmw-run.mjs', 'jmw-preflight.mjs', 'jmw-report.mjs')) {
+    Copy-Item (Join-Path $SourceScripts $ScriptName) (Join-Path $TargetScripts $ScriptName) -Force
+}
+
 # Workstation-local pointer back to this master repo, so the Project Manager can read
 # the CURRENT capability state (config/capabilities.json here) instead of a copy that
 # would go stale. .jmw/local/ ignores itself in git, so the path is never committed.
@@ -146,6 +155,37 @@ foreach ($Sub in @('screenshots', 'videos', 'qa-reports', 'evidence', 'logs')) {
     $Keep = Join-Path $SubDir '.gitkeep'
     if (-not (Test-Path $Keep)) { New-Item -ItemType File -Path $Keep | Out-Null }
 }
+# Bot Ops state: run ledgers and human-gate packets belong to the project and are never
+# overwritten. run-policy.json holds the project's preflight thresholds and timeout budgets.
+foreach ($Sub in @('runs', 'gates')) {
+    $SubDir = Join-Path $JmwDir $Sub
+    if (-not (Test-Path $SubDir)) {
+        New-Item -ItemType Directory -Force -Path $SubDir | Out-Null
+        $Created += ".jmw\$Sub\"
+    }
+    $Keep = Join-Path $SubDir '.gitkeep'
+    if (-not (Test-Path $Keep)) { New-Item -ItemType File -Path $Keep | Out-Null }
+}
+Install-IfMissing (Join-Path $StateTemplates 'run-policy.json') (Join-Path $JmwDir 'run-policy.json') '.jmw\run-policy.json'
+
+# .jmw/.gitignore keeps workstation-local files and secrets out of git. Created when missing; when
+# the project already has one, only the missing required lines are appended (nothing is removed).
+$JmwIgnoreSource = Join-Path $StateTemplates '.gitignore'
+$JmwIgnore = Join-Path $JmwDir '.gitignore'
+if (-not (Test-Path $JmwIgnore)) {
+    Copy-Item $JmwIgnoreSource $JmwIgnore
+    $Created += '.jmw\.gitignore'
+} else {
+    $Have = @(Get-Content $JmwIgnore | ForEach-Object { $_.Trim() })
+    $Missing = @(Get-Content $JmwIgnoreSource | Where-Object { $_.Trim() -and -not $_.StartsWith('#') -and ($Have -notcontains $_.Trim()) })
+    if ($Missing.Count -gt 0) {
+        Add-Content -Path $JmwIgnore -Value (@('', '# Added by install-jmw-agents.ps1 (JMW local files and secrets)') + $Missing)
+        $Kept += ".jmw\.gitignore (added $($Missing.Count) line(s))"
+    } else {
+        $Kept += '.jmw\.gitignore'
+    }
+}
+
 Install-IfMissing (Join-Path $StateTemplates 'artifacts\README.md') (Join-Path $ArtifactsDir 'README.md') '.jmw\artifacts\README.md'
 Install-IfMissing (Join-Path $StateTemplates 'artifacts\.gitignore') (Join-Path $ArtifactsDir '.gitignore') '.jmw\artifacts\.gitignore'
 
@@ -156,5 +196,6 @@ if ($ProjectSlug) { Write-Host "Project profile installed for: $ProjectSlug" }
 if ($LatestHandoff) { Write-Host "Handoff snapshots from master copied to .jmw\handoff-snapshots\ (newest: $($LatestHandoff.Name))" }
 if ($Created.Count -gt 0) { Write-Host ("Created (were missing): " + ($Created -join ', ')) }
 if ($Kept.Count -gt 0) { Write-Host ("Kept existing project state, not overwritten: " + ($Kept -join ', ')) }
+Write-Host "Bot Ops scripts installed to $(Join-Path $JmwDir 'scripts') (run with: node .jmw/scripts/jmw-run.mjs ...; needs Node 22)"
 Write-Host 'Capability pointer written to .jmw\local\jmw-master.json (local only; no capability state copied).'
 Write-Host 'No existing CLAUDE.md was overwritten.'
