@@ -1,112 +1,167 @@
-# Bot Ops handoff: what jmw-bot-team must do for the Control Room
+# Bot Ops: the jmw-bot-team side (Phase 1)
 
-Status: **proposal on branch `claude/bot-ops-phase-1-oqndcn`** (based on PR #3). Nothing here is
-merged, installed into a project, or sending anything. The Control Room side is
-JMW05/byjmw-control-room, same branch name, `docs/BOT-OPS.md`.
+Status: **implemented on branch `claude/bot-ops-phase-1-oqndcn`** (based on PR #3). Not merged, not
+installed into any project, and nothing has been sent to a real Control Room. The receiving side is
+JMW05/byjmw-control-room, `docs/BOT-OPS.md`.
 
 ## The contract in one paragraph
 
 Each project's `.jmw/` folder stays the source of truth. A workstation builds a `jmw-report/1`
-JSON from it and sends it to the Control Room's `bot-ingest` function. The Control Room validates
-it strictly, stores a read model, and shows it on a read-only Bot Ops page. **Nothing ever flows
-back.** Jana answers gates in a Claude Code session by writing a decision to `.jmw/DECISIONS.md`;
-the next report carries that decision, and the database checks it against the gate.
+JSON from it and (only when Jana sets it up and asks) sends it to the Control Room's `bot-ingest`
+function. The Control Room validates it strictly, stores a read model, and shows it on a read-only
+Bot Ops page. **Nothing ever flows back.** Jana answers gates in a Claude Code session by writing a
+decision to `.jmw/DECISIONS.md`; the next report carries that decision, and the database checks it
+against the gate.
 
-## What is on this branch
+## What is implemented
 
 | File | What |
 |---|---|
-| `scripts/jmw-report.mjs` | Builds a report from a project's `.jmw/` (state files, run ledger, gate packets, capability state). **Dry run only**: prints or writes JSON, never sends, reads no credentials. Packet hashes use the same canonical form as the Control Room. |
-| `templates/jmw-state/RUN-LOG.md` | Adds RUN-START / RUN-END lines, the `interrupted` result, and the timezone rule. |
-| `templates/jmw-state/DECISIONS.md` | Adds the three gate-answer lines. |
-| this file | Everything else, as a work list. |
+| `scripts/jmw-run.mjs` | Run boundaries and the run ledger: `start`, `end`, `task-start`, `task-end`, `step` (heartbeat), `spawn`, `proc-register`, `proc-end`, `proc-cleanup`, `gate-raise`, `gate-consume`, `artifact`, `feedback`, `resume-check`. |
+| `scripts/jmw-preflight.mjs` | Required resource preflight before heavy work. |
+| `scripts/jmw-report.mjs` | Builds the report (dry run by default); `--send` mode with the rules below; optional periodic send. |
+| `scripts/jmw-lib.mjs` | Shared code: vocabularies, key patterns, secret/path checks and packet hash mirrored from the Control Room. |
+| `templates/jmw-state/run-policy.json` | Per-project preflight thresholds and timeout budgets. |
+| `templates/jmw-state/.gitignore` | Becomes `.jmw/.gitignore`: `local/`, lock files, `.env`, keys, credentials. |
+| `scripts/install-jmw-agents.ps1` | Copies the four scripts into `.jmw/scripts/` on every sync; creates `.jmw/runs/`, `.jmw/gates/`, `run-policy.json` and `.jmw/.gitignore` only when missing (an existing `.gitignore` only gets missing lines appended). Never overwrites ledgers, gates, policy or state files. |
+| `orchestration/PM-LOOP.md`, `PERMISSIONS.md`, `TASK-CONTRACT.md`, the PM, `game-builder`, `game-qa`, `/jmw-game-build` | Require the run boundaries, the preflight before heavy steps, and the resume rules. |
+| `tests/node/*.test.mjs`, `tests/test-bot-ops.ps1`, `tests/test-installer.ps1` | See "Tests". |
 
-Checked (observed): a report built by `jmw-report.mjs` from the Control Room's TEST fixture
-(TOT CRUE run 2) passes the Control Room validator, and its four gate hashes equal the hashes the
-Control Room computes. The templates parse cleanly with the Control Room parsers.
+All scripts need Node 22 and nothing else. They make no network call except `jmw-report.mjs --send`.
+Run them from the project root; in a synced project they are `.jmw/scripts/*.mjs`.
 
-Not checked: the script on Windows/PowerShell, the installer copying it, and any real project.
+## Using it (what the PM does)
 
-## Work list for the framework
+```bash
+node .jmw/scripts/jmw-run.mjs start --project-root . --mode GAME_BUILD --target VISUAL_REVIEW
+#  -> RUN R-2026-10-20-tales-from-the-crue-01   (RUN-START written, ledger .jmw/runs/<run>.json)
+node .jmw/scripts/jmw-run.mjs task-start --project-root . --run R-... --task-key T-2026-10-20-01 \
+     --agent game-qa --goal "Verify combat timing" --levels L0 --capabilities game_qa,gameplay_capture
+node .jmw/scripts/jmw-run.mjs spawn --project-root . --run R-... --task-key T-2026-10-20-01 \
+     --kind godot --label "Godot headless combat lab" -- godot --headless --path . --quit
+node .jmw/scripts/jmw-run.mjs task-end --project-root . --run R-... --task-key T-2026-10-20-01 \
+     --status done --summary "11 of 12 frames match" --states "GAME_QA -> GAME_QA" --evidence .jmw/artifacts/screenshots/x.png
+node .jmw/scripts/jmw-run.mjs end --project-root . --run R-... --status stopped-human-gate --reason "art direction gate open"
+node .jmw/scripts/jmw-report.mjs --project-root . --run R-... --out report.json      # dry run
+```
 
-### 1. Run boundaries (PM-LOOP)
-* At orient: write `RUN-START` to RUN-LOG with a new run key `R-YYYY-MM-DD-<project>-NN`, mode,
-  workflow, `STATE -> TARGET`, and `resumed_from:` the previous run if that run has a RUN-START but
-  no RUN-END.
-* At every stop: write `RUN-END` with the status (`succeeded`, `stopped-human-gate`,
-  `stopped-no-eligible-work`, `blocked`, `budget-exhausted`, `failed`, `cancelled`), the end state
-  and the reason. A run that dies writes nothing; the next run detects that.
-* Every time: include a timezone (`Z`).
+(In PowerShell, keep `--` as a separate quoted argument, `'--'`, so it reaches Node.)
 
-### 2. Interrupted runs and recovery
-* A run with RUN-START and no RUN-END is **interrupted**. Its unfinished tasks are `interrupted`,
-  not done and not failed: their effects are unknown.
-* Resuming: re-read state, then for each interrupted task:
-  * L0/L1: may simply be re-run.
-  * **L2+: never retried blind.** First verify whether the earlier attempt's effect happened
-    (branch pushed? file written? PR opened?) and record `prior_attempt_effect: verified_absent`
-    or `verified_present` on the new attempt. The Control Room refuses an L2+ retry without it.
-* **Crash loop:** if the last two runs both ended interrupted, the third must not retry the same
-  work: write RUN-END `blocked` with the reason and stop. (The Control Room flags two in a row.)
+**Run keys** `R-YYYY-MM-DD-<project>-NN` (UTC date; `--run-label` gives a shorter middle part).
+Every RUN-LOG time is `YYYY-MM-DD HH:MM Z`. A mode caps the run's level (REVIEW/LAUNCH_REVIEW/
+FINANCE_REVIEW L0, FIX/OVERNIGHT_SAFE/GAME_BUILD L1, STAGING L2); `--max-level` may only lower it,
+except an explicit `L3`, which still needs a consumed gate for each L3 action. L4 is refused.
+`task-start` enforces the run's level and task budget (default 25).
 
-### 3. Run ledger (`.jmw/runs/<run_key>.json`, new, gitignored or committed per project policy)
-Written by the PM as the run goes, in exactly the shape of the report's `run`, `tasks`,
-`artifacts`, `processes`, `gate_consumptions`, `framework_feedback` and `gates` (a list of gate
-keys), plus `repo {branch, head_commit}`. See `jmw-report.mjs` header and the Control Room's
-`validate.mjs` for fields. `run.last_progress_at` updates whenever a step finishes; the
-Control Room sets the heartbeat itself at receipt.
+**Exit codes** (all scripts): 0 ok, 1 error, 2 usage, 3 preflight refused, 4 crash loop (run ended
+blocked), 5 refused by a rule, 124 a spawned program timed out; otherwise `spawn` returns the
+program's own exit code.
 
-### 4. Human gates (`.jmw/gates/<gate_key>.json`, new)
-* One file per gate with: `gate_key`, `gate_kind` (state_gate, l3_approval, l4_handoff,
-  credentials_needed, policy_decision, material_ambiguity, visual_review, financial_review),
-  `level`, `question`, `why_now`, `exact_action`, `options[] {key, label, consequence, authorizes}`,
-  `recommended_option`, `recommended_reason`, `verified_evidence[]`, `not_verified[]`, `risks[]`,
-  `requested_at`, `expires_at` (≤ 30 days).
-* Never edit a gate after it is raised. A changed question is a new gate with
-  `supersedes_gate_key`.
-* **L4** gates are `l4_handoff`, options only `done_by_human`, `not_doing`, `deferred`, none
-  `authorizes`. No bot ever acts on one.
-* Before acting on an approval (L3, or any option that `authorizes`): the decision must name the
-  gate, the answer and the packet hash; the gate must not be expired; and the run records a
-  `gate_consumptions` entry. It is used once. This fits the existing rule that L3 needs approval
-  in the current task: the decision is that approval, for that packet only.
-* Agents never write the gate lines in DECISIONS.md on their own. They copy them only when Jana
-  states the answer in the session, with her name as `decided_by`.
+### Interrupted runs, resume, crash loop
+* A RUN-START with no RUN-END is **interrupted**. `start` detects it, writes `resumed_from: <old run>`,
+  marks the old ledger `interrupted` (finished_at = its last progress), turns its queued/running
+  tasks into `interrupted`, and reconciles its processes (alive and still the same program →
+  `orphaned`, `cleanup_required`; gone → `unknown`). These process records are carried into the new
+  run's ledger with `run_key` of the old run. `resume-check` shows the same without writing.
+* **No blind L2+ retry.** `task-start` numbers attempts across all ledgers. If the previous attempt
+  was interrupted and the task is L2 or above, it refuses unless `--prior-attempt-effect
+  verified_absent|verified_present` is given. L0/L1 retries get `not_applicable`.
+* **Crash loop.** If the last two runs both ended interrupted, `start` writes RUN-START and RUN-END
+  `blocked` for the new run, exits 4, and routes nothing.
+* `end` never leaves work dangling: tasks without `task-end` become `interrupted`, live processes
+  `orphaned`, vanished ones `unknown`, each with a warning.
 
-### 5. Process registration and cleanup
-* Register every long-lived process a task starts (Godot, FFmpeg, ImageMagick, Playwright/browser,
-  dev server, test runner) in the ledger: pid, start time, kind, a few-word label (**never** the
-  command line, arguments, environment or paths), ports.
-* On task end: record `exited_ok` / `exited_error` / `killed` with exit code.
-* On resume: check the previous run's processes. Still alive with no owner → `orphaned`,
-  `cleanup_required: true`. Cleaning up is a local action of the same level as the task that
-  started it; the Control Room never kills anything.
+### Run ledger `.jmw/runs/<run_key>.json`
+`{ schema, project, repo {branch, head_commit}, run, tasks, artifacts, processes, gate_consumptions,
+framework_feedback, gates: [gate keys] }`, each section exactly in the report's shape (Control Room
+`validate.mjs`). Written only by `jmw-run.mjs`, atomically and under a small lock file.
+`run.last_progress_at` is updated on every finished task, step, gate and process end (heartbeat).
 
-### 6. Resource guard and timeouts
-* Per task: a wall-clock timeout by kind (suggested: Godot headless 10 min, capture 15 min, tests
-  20 min). A timeout is `failed` with the reason, not a hang.
-* Watchdogs must check output progress before killing (TOT CRUE feedback: a capture still writing
-  frames was aborted).
-* One heavy process kind at a time per workstation unless the profile allows more.
+### Resource preflight (required before heavy work)
+Measures free RAM, free disk on the project drive and on the temp drive, and how many heavy programs
+(Godot, FFmpeg/ffprobe, ImageMagick, headless browser shells) are already running. Below a minimum it
+refuses: exit 3, a plain reason, and with `--run`/`--task-key` the task is recorded `blocked`
+(`human_required`) with a small numbers-only evidence file and a RUN-LOG line, so it reaches Bot Ops.
+A measurement the OS cannot provide is shown as unknown and never blocks.
 
-### 7. Framework feedback
-When a run notices a problem in jmw-bot-team itself (an agent rule, PM loop step, installer,
-capability checker), add a `framework_feedback` entry: key `FF-<project>-<slug>`, component,
-reference, severity, description. Fixes happen here, never from the Control Room.
+| Threshold (`run-policy.json` → `preflight`, or flag) | Default |
+|---|---|
+| `min_free_ram_mb` (`--min-free-ram-mb`) / warn | 2048 / 4096 |
+| `min_free_disk_project_mb` (`--min-free-disk-mb`) / warn | 5120 / 10240 |
+| `min_free_disk_temp_mb` (`--min-free-temp-mb`) / warn | 2048 / 5120 |
+| `max_heavy_running` (`--max-heavy-running`; `--skip-process-count` to skip) | 2 |
 
-### 8. Sending (not built; human-gated)
-`jmw-report.mjs` has no send mode on purpose. Sending needs three decisions only Jana can make:
-the ingest reachability route (Netlify team-login blocks scripts today), the ingest secret
-(L4: created and stored by Jana; never in a repo, a `.jmw` file or a log), and whether sending is
-manual or scheduled (Phase 1: manual only).
+`spawn` runs it automatically for godot, ffmpeg, imagemagick, playwright, browser, browser_recorder
+and test_runner (`--heavy` forces it for other kinds).
 
-## Acceptance tests to add here
-1. `jmw-report.mjs` on the templates produces a report the Control Room validator accepts.
-2. Gate hash parity with the Control Room for a fixed packet (golden hash).
-3. RUN-LOG with RUN-START and no RUN-END → next run writes `resumed_from`.
-4. An L2 task interrupted → the next attempt carries `prior_attempt_effect`.
-5. Two interrupted runs → the third writes RUN-END `blocked`.
-6. Process labels never contain `--`, `=`, `/`, `\` or quotes.
-7. No report ever contains `.env` content, tokens or absolute paths (run the Control Room's
-   `looksSecret` check over the output).
-8. An L4 gate file with an `authorizes: true` option is refused by the PM before it is written.
+### Processes and timeout budgets
+`spawn` starts the program without a shell, registers pid, start time, kind and the few-word label
+(never the command line, arguments, environment or paths; labels with `--`, `=`, slashes, quotes or
+`@` are refused), writes its output to `.jmw/artifacts/logs/…log`, and records `exited_ok` /
+`exited_error` / `killed` with the exit code. Budgets by kind (minutes, `run-policy.json` →
+`timeouts_min`): godot 10, ffmpeg 15, browser_recorder 15, imagemagick 5, playwright 20, browser 20,
+test_runner 20, dev_server 60, others 20. At the budget it checks progress first: if the program wrote
+output (or `--progress-path` grew, e.g. a capture's frame folder) within the quiet limit
+(`stall_min`, 3), it gets more time up to the hard cap (2 × budget); otherwise the process tree is
+ended (taskkill /T /F on Windows), the task is recorded `failed` with the reason, and it exits 124.
+`proc-cleanup` ends only processes this project registered, and refuses a pid that now belongs to a
+different program.
+
+### Human gates `.jmw/gates/<gate_key>.json`
+`gate-raise --from packet.json` with `gate_key` (optional, generated), `gate_kind`, `level`,
+`question`, `why_now`, `exact_action`, `options[] {key, label, consequence, authorizes}`,
+`recommended_option`, `recommended_reason`, `verified_evidence[]`, `not_verified[]`, `risks[]`,
+`requested_at` (default now), `expires_at` or `expires_in_days` (default 7, max 30),
+`supersedes_gate_key`. Validated like the Control Room; written once (exclusive create) with
+`packet_hash` = the Control Room's canonical hash; never edited. **L4** must be `l4_handoff` with only
+`done_by_human`, `not_doing`, `deferred`, none authorizing, or it is refused before anything is
+written. It prints the three DECISIONS.md lines to copy **only** when Jana states her answer.
+`gate-consume` checks: an active decision by a person (not a bot/AI name) for that gate, matching
+hash, an option that authorizes, not expired, not already used, not L4, level within the run. Then it
+records `gate_consumptions` once.
+
+### Framework feedback
+`feedback --slug <slug> --component <agent|skill|orchestration|pm_loop|installer|capability_checker|jmw_report|state_files|process_supervision|other> --severity <critical|high|medium|low> --description "..."`
+records `FF-<project>-<slug>` (status open) in the ledger. Fixes happen in jmw-bot-team.
+
+### Sending (`jmw-report.mjs --send`)
+* Default is a dry run. Sending needs `--send`.
+* URL: `--url` or env `JMW_INGEST_URL`. Must be https (plain http only to 127.0.0.1/localhost for
+  tests); no credentials, query or fragment. The real ingest will be
+  `https://byjmw-bot-ingest.netlify.app/.netlify/functions/bot-ingest`.
+* Secret: **only** env `CONTROL_ROOM_INGEST_SECRET` (≥ 32 characters), sent as
+  `X-Control-Room-Ingest-Secret`. A `--secret`/`--token`-style argument is refused. The secret is never
+  printed, logged, written to a ledger or report, or included in an error. Creating and storing it is
+  Jana's (L4). Set it in the current shell only, e.g. PowerShell `$env:CONTROL_ROOM_INGEST_SECRET = Read-Host -MaskInput`.
+* Before sending: body ≤ 1 MiB, no credential-shaped value, and not the secret itself. Redirects are
+  not followed. Output is the status code, non-zero counts and warning/error codes only.
+* Heartbeat while a run is going: `--send --run R-... --every-min 10` sends every N minutes (1–120)
+  until the run has ended (one final send), at most `--max-hours` (default 12).
+
+## Tests
+
+* `npm test` (`node --test "tests/node/*.test.mjs"`): run ledger and resume rules, crash loop,
+  processes and orphans, preflight and spawn budgets, gates, send mode against a local mock server
+  only, and `control-room-contract.test.mjs`, which imports the Control Room's `validate.mjs`,
+  `canonical.mjs`, `jmw-parse.mjs` and `vocab.mjs` from a sibling `byjmw-control-room` checkout (or
+  `JMW_CONTROL_ROOM_PATH`) and skips with a message when it is absent.
+* `tests/test-bot-ops.ps1`: the same scripts installed into a temp project on Windows.
+* `tests/test-installer.ps1`: the new installed files and re-install safety.
+
+## How Jana validates on Windows
+
+From a PowerShell 7 window, with Node 22 and the Control Room repo checked out next to this one:
+
+```powershell
+cd C:\path\to\jmw-bot-team; git fetch origin; git checkout claude/bot-ops-phase-1-oqndcn; git pull; npm test; pwsh -NoProfile -File tests/test-foundation.ps1; pwsh -NoProfile -File tests/test-installer.ps1; pwsh -NoProfile -File tests/test-bot-ops.ps1
+```
+
+Each prints its pass/fail counts; all should end with `Failed: 0` (or `# fail 0` for `npm test`).
+
+## Not verified yet
+
+* Any of this on Windows/PowerShell (written for it; checked only on Linux, without `pwsh`).
+* Free-RAM reading on macOS (Node reports only truly free pages there, so it can under-report).
+* A real project (TOT CRUE or any other) and a real Godot/FFmpeg/browser under the watchdog.
+* Sending to the real ingest: the secret, reachability and whether sending is manual or scheduled
+  are Jana's decisions. Tests only ever talk to a mock server on 127.0.0.1.

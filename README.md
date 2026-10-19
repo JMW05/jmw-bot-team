@@ -19,7 +19,8 @@ The bots may inspect, analyze, draft, test, and recommend. They must not deploy 
 - `orchestration/` — how the JMW Project Manager runs multi-step work safely: permission levels, modes, state machines, task/result envelopes, the PM loop, and commands. Start with `orchestration/README.md`.
 - `.claude/skills/jmw-*` — the six JMW commands (`/jmw-review`, `/jmw-fix-p1`, `/jmw-owner-ready`, `/jmw-launch-check`, `/jmw-finance-review`, `/jmw-game-build`). Plain-English requests trigger them too.
 - `scripts/` — installer, sync, a read-only state checker, and the read-only environment/capability checker (`test-jmw-environment.ps1`) with its reader (`get-jmw-capability.ps1`). See `docs/CAPABILITIES.md`.
-- `tests/` — `test-installer.ps1` (installer and state checker) and `test-foundation.ps1` (capability reader, agent/skill files, Project Manager instructions).
+- `scripts/jmw-run.mjs`, `jmw-preflight.mjs`, `jmw-report.mjs` — Bot Ops (Node 22, no dependencies): run boundaries and run ledger, the required resource preflight before heavy work, process timeout budgets, human-gate packets, and the Control Room report (dry run unless `--send`). See `BOT-OPS-JMW-HANDOFF.md`.
+- `tests/` — `test-installer.ps1` (installer and state checker), `test-foundation.ps1` (capability reader, agent/skill files, Project Manager instructions), `test-bot-ops.ps1` (Bot Ops scripts in an installed project), and `tests/node/` (`npm test`).
 
 ## First commands to try
 

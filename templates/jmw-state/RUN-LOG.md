@@ -12,6 +12,8 @@ Each PM run is bracketed (Bot Ops, BOT-OPS-JMW-HANDOFF.md):
 - TIME | RUN-START | R-YYYY-MM-DD-<slug>-NN | jmw-project-manager | MODE | workflow | STATE -> TARGET | resumed_from: R-...|none
 - TIME | RUN-END | R-... | succeeded|stopped-human-gate|stopped-no-eligible-work|blocked|budget-exhausted|failed|cancelled | STATE_AT_END | stop reason
 A RUN-START with no RUN-END means the run was interrupted. The next run names it in resumed_from.
+.jmw/scripts/jmw-run.mjs writes RUN-START, RUN-END and the task/step lines (start, end, task-end, step);
+do not add a second line by hand for the same step.
 -->
 
 - YYYY-MM-DD HH:MM | T-000 | jmw-project-manager | L0 | done | INTAKE -> INTAKE | none | JMW state files created

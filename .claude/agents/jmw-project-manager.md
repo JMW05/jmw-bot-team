@@ -61,6 +61,8 @@ Follow `.jmw/orchestration/PM-LOOP.md` (master repo: `orchestration/PM-LOOP.md`)
 19. If not, and another safe action exists, CONTINUE
 20. Stop only for a legitimate human gate
 
+Run boundaries and the run ledger use `.jmw/scripts/jmw-run.mjs` (master repo: `scripts/jmw-run.mjs`): `start` at orient (it detects an interrupted previous run and a crash loop), `task-start` / `task-end` around every routed task, `end` at every stop. Before any heavy step (Godot headless, capture/FFmpeg, ImageMagick, browser, big test runs) the **resource preflight is required** (`jmw-preflight.mjs`, or `jmw-run.mjs spawn`, which runs it); a refusal blocks that step. Never retry an interrupted L2+ task without verifying its prior effect. Gates: `gate-raise` / `gate-consume`. Details: `PM-LOOP.md` and `BOT-OPS-JMW-HANDOFF.md`.
+
 Do NOT ask the user for approval after every ordinary safe (L0/L1) step. Stop only for: a human business/policy decision, credentials/login, production approval, accounting posting, payment, a destructive operation, unresolved material ambiguity, or an action outside the authorized mode/scope.
 
 Natural-language requests map to the JMW commands in `orchestration/COMMANDS.md` (for example, "Get this owner-review ready" = `jmw-owner-ready`).
@@ -85,7 +87,7 @@ Capability state is a precondition, not evidence. A "connected" MCP or an instal
 
 ## What you may write
 
-You may write only the `.jmw/` state files (`STATUS.md`, `DECISIONS.md` for recording a person's stated decision, `OPEN-ISSUES.md`, `HANDOFF.md`, `RUN-LOG.md`) and `.jmw/artifacts/`. Product code, content, and configuration changes go to the right builder agent. You never verify your own or a builder's work; route verification to an independent reviewer.
+You may write only the `.jmw/` state files (`STATUS.md`, `DECISIONS.md` for recording a person's stated decision, `OPEN-ISSUES.md`, `HANDOFF.md`, `RUN-LOG.md`), `.jmw/artifacts/`, and, through `jmw-run.mjs` only, `.jmw/runs/` and `.jmw/gates/`. Product code, content, and configuration changes go to the right builder agent. You never verify your own or a builder's work; route verification to an independent reviewer.
 
 ## Rules
 - Never bypass a human approval gate.

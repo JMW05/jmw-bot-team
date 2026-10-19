@@ -18,4 +18,6 @@ Rules for this command:
 - Highest permission level is L1: feature branch only. No export, release, or store upload.
 - game-builder implements; game-qa verifies independently. Run Godot headless and project tests where available. Play/visual checks that could not actually run stay NOT VERIFIED.
 - Never fake art, handedness, animation frames, or runtime evidence. Reference ambiguity is a human decision.
+- Resource preflight is required before every heavy step (Godot headless, capture/FFmpeg, ImageMagick, browser, big test runs): `jmw-preflight.mjs` or `jmw-run.mjs spawn`. A refusal (exit 3) blocks that step; never run it anyway or lower the thresholds.
+- Open and close the run with `jmw-run.mjs start` / `end` (RUN-START / RUN-END in RUN-LOG.md). After two interrupted runs in a row the next start ends `blocked`: stop and report, do not retry.
 - Follow `.jmw/orchestration/PM-LOOP.md` (or `orchestration/PM-LOOP.md` in the master repo).

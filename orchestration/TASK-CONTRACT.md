@@ -6,6 +6,7 @@ When the Project Manager hands work to a specialist it sends a **TASK ENVELOPE**
 
 ```yaml
 task_id: T-2026-10-13-03          # T-<date>-<sequence>, unique in RUN-LOG
+run_key: R-2026-10-13-lavish-01   # from jmw-run.mjs start; used for preflight/spawn records
 project: lavish
 goal: Verify ISSUE-012 (quote form loses file on back button) is fixed on local preview
 current_state: QA
