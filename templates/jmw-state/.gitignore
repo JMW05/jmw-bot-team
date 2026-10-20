@@ -1,0 +1,12 @@
+# JMW: never commit workstation-local files or secrets from .jmw.
+local/
+runs/.lock
+runs/*.tmp
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+secrets*

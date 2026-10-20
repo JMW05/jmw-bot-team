@@ -1,0 +1,28 @@
+{
+  "schema": "jmw-run-policy/1",
+  "note": "Project-tunable limits for .jmw/scripts/jmw-run.mjs and jmw-preflight.mjs. Created once by the installer and never overwritten. Command-line flags override these.",
+  "preflight": {
+    "min_free_ram_mb": 2048,
+    "warn_free_ram_mb": 4096,
+    "min_free_disk_project_mb": 5120,
+    "warn_free_disk_project_mb": 10240,
+    "min_free_disk_temp_mb": 2048,
+    "warn_free_disk_temp_mb": 5120,
+    "max_heavy_running": 2
+  },
+  "timeouts_min": {
+    "godot": 10,
+    "ffmpeg": 15,
+    "browser_recorder": 15,
+    "imagemagick": 5,
+    "playwright": 20,
+    "browser": 20,
+    "test_runner": 20,
+    "dev_server": 60,
+    "node": 20,
+    "python": 20,
+    "other": 20
+  },
+  "stall_min": 3,
+  "max_extend_factor": 2
+}

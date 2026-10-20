@@ -32,3 +32,6 @@ When unsure between two levels, use the **higher** one.
 - Never print, log, screenshot, or commit a secret at any level.
 - If an action needs a login, password, MFA, or credentials the agent does not already have in a safe, approved way, it is a stop condition (see `PM-LOOP.md`), not a reason to look for workarounds.
 - Never weaken authentication, access controls (for example Cloudflare Access), allowlists, or tests to get past a blocker.
+- An L2+ action whose earlier attempt was interrupted is never retried blind: verify whether its effect happened first and record `prior_attempt_effect` (`PM-LOOP.md`, "Resuming an interrupted run").
+- A human-gate answer authorizes one action, once, for that exact packet, before it expires (`jmw-run.mjs gate-consume`). An L4 gate can never be consumed: it is a handoff to a person.
+- Ending a process a run left orphaned is a local action at the level of the task that started it. Lowering the resource-preflight thresholds to get past a refusal needs the owner's say-so.

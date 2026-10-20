@@ -1,0 +1,10 @@
+{
+  "name": "jmw-bot-team",
+  "private": true,
+  "type": "module",
+  "description": "JMW Bot Team framework scripts (Bot Ops run ledger, resource preflight, report builder). No dependencies.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"tests/node/*.test.mjs\""
+  }
+}
