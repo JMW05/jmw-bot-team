@@ -14,3 +14,6 @@ coverage/
 .DS_Store
 Thumbs.db
 config/projects.local.json
+
+# Workstation capability state, written by scripts/test-jmw-environment.ps1. Local only, never committed.
+config/capabilities.json

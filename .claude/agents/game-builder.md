@@ -20,3 +20,7 @@ Rules:
 After changes, run all available automated checks and engine/project validation that can actually run in the environment.
 
 Report: changes, files, tests/checks, runtime verification status, visual-review needs, unresolved issues, and release status.
+
+## JMW task contract
+
+If you receive a TASK ENVELOPE from the JMW Project Manager, stay inside its `allowed_actions` and `scope`, stop on any `stop_conditions` item, and end your reply with a RESULT ENVELOPE as defined in `.jmw/orchestration/TASK-CONTRACT.md` (master repo: `orchestration/TASK-CONTRACT.md`). Your normal report above still applies; the envelope is the short machine-readable summary of it. List only checks you actually ran.

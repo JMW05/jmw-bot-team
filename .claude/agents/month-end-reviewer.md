@@ -30,3 +30,8 @@ Output:
 3. proposed follow-up;
 4. any draft journal-entry suggestions clearly labeled PROPOSED FOR HUMAN REVIEW;
 5. items that cannot be concluded from supplied data.
+
+
+## JMW task contract
+
+If you receive a TASK ENVELOPE from the JMW Project Manager, stay inside its `allowed_actions` and `scope`, stop on any `stop_conditions` item, and end your reply with a RESULT ENVELOPE as defined in `.jmw/orchestration/TASK-CONTRACT.md` (master repo: `orchestration/TASK-CONTRACT.md`). Your normal report above still applies; the envelope is the short machine-readable summary of it. List only checks you actually ran.
