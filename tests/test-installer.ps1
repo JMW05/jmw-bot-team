@@ -110,12 +110,13 @@ try {
     Assert ((Hash (Join-Path $P 'CLAUDE.md')) -eq $ClaudeHash) 'root CLAUDE.md untouched on re-install'
     Assert ($Out -match 'Kept existing project state') 'installer reports kept state'
     Assert (Test-Path (Join-Path $J 'scripts/jmw-run.mjs')) 're-install refreshes framework scripts'
-    $JIgnore = Get-Content (Join-Path $J '.gitignore') -Raw
-    Assert ($JIgnore -match 'project-cache/') "project's own .jmw/.gitignore lines kept"
-    Assert ($JIgnore -match '(?m)^local/$' -and $JIgnore -match '(?m)^\.env$') 'missing required ignore lines appended'
+    # compare trimmed logical lines: Add-Content writes CRLF on Windows, so anchored regexes on the raw text are unreliable
+    $IgnoreLines = @(Get-Content (Join-Path $J '.gitignore') | ForEach-Object { $_.Trim() })
+    Assert ($IgnoreLines -contains 'project-cache/') "project's own .jmw/.gitignore lines kept"
+    foreach ($req in 'local/','.env','*.key','runs/.lock') { Assert ($IgnoreLines -contains $req) "missing required ignore line appended: $req" }
     & $Installer -TargetPath $P -ProjectSlug 'lavish' | Out-Null
-    $Once = (Get-Content (Join-Path $J '.gitignore') | Where-Object { $_ -eq 'local/' }).Count
-    Assert ($Once -eq 1) 'ignore lines are not appended twice'
+    $IgnoreLines = @(Get-Content (Join-Path $J '.gitignore') | ForEach-Object { $_.Trim() })
+    foreach ($req in 'local/','.env','*.key','runs/.lock') { Assert (@($IgnoreLines | Where-Object { $_ -eq $req }).Count -eq 1) "ignore line not appended twice: $req" }
     $CheckOut = & pwsh -NoProfile -File $Checker -ProjectPath $P | Out-String
     Assert ($LASTEXITCODE -eq 0) 'state checker passes with a real issue'
     Assert ($CheckOut -match 'Issues found: 1') 'checker reads the issue (template ignored)'

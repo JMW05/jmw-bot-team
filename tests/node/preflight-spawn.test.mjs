@@ -99,7 +99,9 @@ test('spawn: output progress earns more time up to the hard cap; a clean exit is
   const r = runKeyFrom(jmwRun(root, 'start', ['--mode', 'GAME_BUILD']).stdout);
   jmwRun(root, 'task-start', ['--run', r, '--task-key', 'T-s3', '--agent', 'game-qa', '--goal', 'Capture', '--levels', 'L0']);
   // writes a line every 200 ms for ~3 s: past its 1 s budget, but never quiet, and under the 8 s cap
-  const writer = 'let n=0;const i=setInterval(()=>{console.log("frame",++n);if(n>=15){clearInterval(i)}},200)';
+  // plain writes, not console.log: under FORCE_COLOR (set by some terminals and test runners) console.log
+  // colours numbers with ANSI codes, which would break the literal match below
+  const writer = 'let n=0;const i=setInterval(()=>{process.stdout.write("frame "+(++n)+"\\n");if(n>=15){clearInterval(i)}},200)';
   const s = jmwRun(root, 'spawn', ['--run', r, '--task-key', 'T-s3', '--kind', 'node', '--label', 'Frame writer', '--timeout-sec', '1', '--stall-sec', '1',
     '--max-sec', '8', '--quiet', '--', process.execPath, '-e', writer]);
   assert.equal(s.code, 0, s.out);
@@ -112,7 +114,7 @@ test('spawn: output progress earns more time up to the hard cap; a clean exit is
   assert.match(log, /frame 15/);
   // never quiet, but over the hard cap: ended
   jmwRun(root, 'task-start', ['--run', r, '--task-key', 'T-s4', '--agent', 'game-qa', '--goal', 'Capture', '--levels', 'L0']);
-  const forever = 'setInterval(()=>console.log("frame"),100)';
+  const forever = 'setInterval(()=>process.stdout.write("frame\\n"),100)';
   const c = jmwRun(root, 'spawn', ['--run', r, '--task-key', 'T-s4', '--kind', 'node', '--label', 'Endless writer', '--timeout-sec', '1', '--stall-sec', '1',
     '--max-sec', '2', '--quiet', '--', process.execPath, '-e', forever]);
   assert.equal(c.code, 124, c.out);
