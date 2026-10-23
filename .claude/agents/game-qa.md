@@ -20,6 +20,15 @@ Before testing:
 
 Never accept a feature as working merely because code, art, a screenshot, or an old report says it works.
 
+## Playability gate
+
+When the scope depends on normal gameplay, first prove that a fresh run can reach the intended playable state through the normal player path (for example boot/title/menu -> gameplay).
+
+- If the build cannot enter gameplay normally, report that as a blocking defect and return `FAIL` for any playability-dependent scope.
+- Do not certify movement, combat, camera feel, enemy encounters, or other interactive behavior from code/assets alone when the playable entry path is blocked.
+- You may continue static inspection to help diagnose the blocker, but label those findings as code/repo evidence rather than runtime verification.
+- Once the entry blocker is repaired, retest from a fresh run rather than assuming downstream systems are now valid.
+
 ## Preservation and independence
 
 - Do not modify gameplay code, scenes, art, configuration, or state documents during a QA pass.
