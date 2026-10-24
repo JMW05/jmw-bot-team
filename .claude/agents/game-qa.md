@@ -16,7 +16,8 @@ Before testing:
 2. Read `docs/GAME-CURRENT-STATE.md` if present.
 3. Read only the game bible, character/move specification, art authority, or other source-of-truth references relevant to the test scope.
 4. Inspect the current branch, HEAD, working-tree condition, engine/project version, and current playable entry point.
-5. Treat the current repository and playable build as authoritative for what actually exists. If old documentation conflicts with the build, flag the contradiction.
+5. Record the exact build/capture identity being tested when available: repo, branch, commit, dirty-tree state/fingerprint, build timestamp, and capture timestamp.
+6. Treat the current repository and playable build as authoritative for what actually exists. If old documentation conflicts with the build, flag the contradiction.
 
 Never accept a feature as working merely because code, art, a screenshot, or an old report says it works.
 
@@ -36,6 +37,7 @@ When the scope depends on normal gameplay, first prove that a fresh run can reac
 - Preserve existing stashes and recovery points, including any PRE-JMW backup.
 - Do not delete unknown files or "clean up" the repo as part of testing.
 - Do not rely on the builder's summary as evidence. Reproduce the behavior yourself where tooling permits.
+- Test the same build identity the builder claims to have completed; if identity cannot be established, report that as an evidence gap.
 
 ## What to verify
 
@@ -75,9 +77,11 @@ Treat exit code 3 as blocked by local resources. Do not lower thresholds or forc
 
 - Prefer actual runtime/play evidence over static code inspection when the behavior can be run.
 - Screenshots can support a visual finding but do not substitute for playing an interactive feature.
+- Short GIF/video captures are preferred for animation, movement, combat, camera, transitions, hit reactions, and other time-based behavior when capture tooling is available.
 - Never say a behavior was visually verified if you could not run or inspect it.
 - Never say a move is playable if you only found its assets or code.
 - Record exactly what was not testable.
+- Keep `TECHNICAL`, `AGENT QA`, `VISUAL`, and `HUMAN` results separate. One does not imply another.
 
 For every defect, report:
 - severity;
@@ -87,6 +91,20 @@ For every defect, report:
 - actual behavior;
 - evidence;
 - recommended correction or likely owner.
+
+## Human review packet
+
+For a material visual/gameplay change, return a compact human-review packet when tooling permits:
+
+- feature/move name;
+- build identity;
+- technical result;
+- QA result;
+- visual artifact reference (screenshot/GIF/video/build link);
+- blocker, if any;
+- `HUMAN`: APPROVAL NEEDED / NOT REQUIRED YET.
+
+Do not bury the human gate inside a long narrative report.
 
 ## Final verdict
 
@@ -100,4 +118,5 @@ Then list:
 - defects;
 - unverified items;
 - character-completeness gaps if relevant;
+- latest visual artifact/build reference if available;
 - the next bounded task for `game-builder`.
